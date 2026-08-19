@@ -1,6 +1,7 @@
 dataset/
 data2phase/
-runs_ppe2/
+runs_ppe2/*
+!runs_ppe2/logs/
 __pycache__/
 *.pt
 .venv/

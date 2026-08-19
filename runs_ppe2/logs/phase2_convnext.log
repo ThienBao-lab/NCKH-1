@@ -1,0 +1,54 @@
+GPU: NVIDIA RTX PRO 6000 Blackwell Server Edition  sm_120  | torch 2.13.0+cu130 cuda 13.0 | bf16=True
+train 4629 | val 509 | test 1596 crop
+pos_weight: {'helmet': 2.18, 'vest': 2.0, 'gloves': 1.0, 'boots': 4.63}
+ep   1  loss 0.5961  val macro-F1 0.7794
+ep   2  loss 0.3164  val macro-F1 0.8351
+ep   3  loss 0.2279  val macro-F1 0.8480
+ep   4  loss 0.1597  val macro-F1 0.8692
+ep   5  loss 0.1210  val macro-F1 0.8732
+ep   6  loss 0.0904  val macro-F1 0.8594
+ep   7  loss 0.0774  val macro-F1 0.8891
+ep   8  loss 0.0617  val macro-F1 0.8883
+ep   9  loss 0.0474  val macro-F1 0.8871
+ep  10  loss 0.0380  val macro-F1 0.8895
+ep  11  loss 0.0383  val macro-F1 0.8901
+ep  12  loss 0.0331  val macro-F1 0.8924
+ep  13  loss 0.0342  val macro-F1 0.8702
+ep  14  loss 0.0261  val macro-F1 0.9066
+ep  15  loss 0.0256  val macro-F1 0.9014
+ep  16  loss 0.0186  val macro-F1 0.8991
+ep  17  loss 0.0136  val macro-F1 0.8943
+ep  18  loss 0.0138  val macro-F1 0.8942
+ep  19  loss 0.0142  val macro-F1 0.8996
+ep  20  loss 0.0145  val macro-F1 0.8945
+ep  21  loss 0.0154  val macro-F1 0.8999
+ep  22  loss 0.0111  val macro-F1 0.9003
+ep  23  loss 0.0083  val macro-F1 0.8953
+ep  24  loss 0.0086  val macro-F1 0.9057
+ep  25  loss 0.0110  val macro-F1 0.9041
+ep  26  loss 0.0102  val macro-F1 0.9073
+ep  27  loss 0.0081  val macro-F1 0.9041
+ep  28  loss 0.0090  val macro-F1 0.8985
+ep  29  loss 0.0081  val macro-F1 0.8996
+ep  30  loss 0.0081  val macro-F1 0.8991
+ep  31  loss 0.0061  val macro-F1 0.8962
+ep  32  loss 0.0068  val macro-F1 0.8984
+ep  33  loss 0.0073  val macro-F1 0.9005
+ep  34  loss 0.0078  val macro-F1 0.9033
+ep  35  loss 0.0061  val macro-F1 0.9062
+ep  36  loss 0.0060  val macro-F1 0.9025
+ep  37  loss 0.0076  val macro-F1 0.9034
+ep  38  loss 0.0067  val macro-F1 0.9025
+ep  39  loss 0.0059  val macro-F1 0.9025
+ep  40  loss 0.0067  val macro-F1 0.9025
+============================================
+  TEST (Protocol 1 — oracle, crop từ box GT)
+============================================
+nhóm               P         R        F1
+helmet        0.9495    0.8674    0.9066
+vest          0.9526    0.8608    0.9044
+gloves        0.7563    0.6495    0.6988
+boots         0.5583    0.5726    0.5654
+macro         0.8042    0.7376    0.7688
+checkpoint: runs_ppe2/phase2_convnext/best.pt
+Đây là TRẦN TRÊN của pha 2. Số thật phải chạy evaluate.py (end-to-end).
