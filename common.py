@@ -132,7 +132,7 @@ def configure_classes(names):
 # ---------------------------------------------------------------- tham số
 IOA_THRESH      = 0.60   # tỉ lệ box PPE nằm trong box người thì mới được gán
 CROP_MARGIN     = 0.12   # nới rộng box người 12% mỗi chiều khi cắt
-MIN_CROP_SIDE   = 48     # bỏ crop có cạnh ngắn < 48px (người quá xa)
+MIN_CROP_SIDE   = 24     # bỏ crop có cạnh ngắn < 24px (48px làm mất 30% người ở test)
 OVERLAP_IOU     = 0.25   # ngưỡng coi là "có người khác lọt vào crop"
 MIXED_IS_VIOLATION = True  # đeo 1 chiếc găng -> vẫn tính vi phạm
 

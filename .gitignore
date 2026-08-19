@@ -1,0 +1,6 @@
+dataset/
+data2phase/
+runs_ppe2/
+__pycache__/
+*.pt
+.venv/
