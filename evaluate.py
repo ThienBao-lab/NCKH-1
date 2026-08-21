@@ -16,6 +16,7 @@ Chạy:
 """
 
 import argparse
+import json
 from collections import Counter
 from pathlib import Path
 
@@ -51,17 +52,21 @@ class Tally:
         print(f"  {title}")
         print("=" * 52)
         print(f"{'nhóm':<10}{'P':>10}{'R':>10}{'F1':>10}{'#GT+':>8}")
-        Ps, Rs, Fs = [], [], []
+        Ps, Rs, Fs, data = [], [], [], []
         for g in GROUP_NAMES:
             tp, fp, fn = self.tp[g], self.fp[g], self.fn[g]
             p = tp / (tp + fp) if tp + fp else 0.0
             r = tp / (tp + fn) if tp + fn else 0.0
             f = 2 * p * r / (p + r) if p + r else 0.0
             Ps.append(p); Rs.append(r); Fs.append(f)
+            data.append({"group": g, "P": round(p, 4), "R": round(r, 4),
+                         "F1": round(f, 4), "TP": tp, "FP": fp, "FN": fn})
             print(f"{g:<10}{p:>10.4f}{r:>10.4f}{f:>10.4f}{tp+fn:>8}")
         n = len(GROUP_NAMES)
-        print(f"{'macro':<10}{sum(Ps)/n:>10.4f}{sum(Rs)/n:>10.4f}{sum(Fs)/n:>10.4f}")
-        return sum(Fs) / n
+        macro = {"P": round(sum(Ps)/n, 4), "R": round(sum(Rs)/n, 4),
+                 "F1": round(sum(Fs)/n, 4)}
+        print(f"{'macro':<10}{macro['P']:>10.4f}{macro['R']:>10.4f}{macro['F1']:>10.4f}")
+        return {"title": title, "per_group": data, "macro": macro}
 
 
 def match_persons(pred_boxes, gt_boxes):
@@ -182,6 +187,7 @@ def main():
     ap.add_argument("--conf1", type=float, default=0.20)
     ap.add_argument("--conf-baseline", type=float, default=0.25)
     ap.add_argument("--data-yaml", help="data.yaml gốc, để lấy đúng thứ tự lớp")
+    ap.add_argument("--save-json", help="lưu kết quả ra JSON để vẽ hình")
     args = ap.parse_args()
 
     if args.data_yaml:
@@ -214,15 +220,27 @@ def main():
     tf = build_transforms(False)
 
     t2 = run_two_phase(imgs, lbl_dir, YOLO(args.phase1), clf, tf, device, args.conf1)
-    f2 = t2.report(f"2 PHA — end-to-end (conf pha 1 = {args.conf1})")
+    r2 = t2.report(f"2 PHA — end-to-end (conf pha 1 = {args.conf1})")
+
+    out = {"two_phase": r2, "conf1": args.conf1,
+           "phase1": args.phase1, "phase2": args.phase2}
 
     if args.baseline:
         t1 = run_one_phase(imgs, lbl_dir, YOLO(args.baseline), args.conf_baseline)
-        f1 = t1.report("1 PHA — quy về nhãn theo từng người")
+        r1 = t1.report("1 PHA — quy về nhãn theo từng người")
+        out["one_phase"] = r1
+        out["baseline"] = args.baseline
+        f2, f1 = r2["macro"]["F1"], r1["macro"]["F1"]
         print("\n" + "=" * 52)
         print(f"  macro-F1:  2 pha {f2:.4f}   |   1 pha {f1:.4f}   "
               f"|   chênh {f2-f1:+.4f}")
         print("=" * 52)
+
+    if args.save_json:
+        p = Path(args.save_json)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(out, indent=2, ensure_ascii=False))
+        print(f"\nĐã lưu: {p}")
 
 
 if __name__ == "__main__":
