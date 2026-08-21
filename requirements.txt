@@ -1,0 +1,7 @@
+# Cài bằng: uv venv --python 3.12 && VIRTUAL_ENV=.venv uv pip install -r requirements.txt
+# torch 2.13 mặc định đã là wheel cu130 — cần cho GPU Blackwell (sm_120).
+torch==2.13.0
+torchvision==0.28.0
+ultralytics==8.4.121
+pillow==12.3.0
+pyyaml==6.0.3
