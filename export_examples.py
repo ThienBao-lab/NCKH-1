@@ -32,6 +32,7 @@ from train_phase2 import build_model, build_transforms
 
 IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 OK, BAD, NEU = (34, 197, 94), (239, 68, 68), (148, 163, 184)
+MISS = (245, 158, 11)          # người có trong nhãn mà pha 1 không tìm ra
 SHORT = {"helmet": "mũ", "vest": "áo", "gloves": "găng", "boots": "giày"}
 
 # Font bitmap mặc định của PIL không có glyph tiếng Việt lẫn ✓/✗ (chữ ra thành
@@ -49,7 +50,18 @@ def load_font(size):
     return ImageFont.load_default()
 
 
-def draw_one(im, persons, preds, gts, scale=1.0):
+def dashed_rect(d, box, colour, width, dash=9):
+    """Khung đứt nét — dùng cho người pha 1 bỏ sót."""
+    x0, y0, x1, y1 = box
+    for x in range(int(x0), int(x1), dash * 2):
+        d.line([x, y0, min(x + dash, x1), y0], fill=colour, width=width)
+        d.line([x, y1, min(x + dash, x1), y1], fill=colour, width=width)
+    for y in range(int(y0), int(y1), dash * 2):
+        d.line([x0, y, x0, min(y + dash, y1)], fill=colour, width=width)
+        d.line([x1, y, x1, min(y + dash, y1)], fill=colour, width=width)
+
+
+def draw_one(im, persons, preds, gts, scale=1.0, missed_boxes=()):
     """Vẽ khung + nhãn lên bản sao của ảnh."""
     im = im.copy()
     if scale != 1.0:
@@ -118,6 +130,32 @@ def draw_one(im, persons, preds, gts, scale=1.0):
             d.multiline_text((box_t[0] + pad, box_t[1] + pad - y0), txt,
                              fill="white", font=font, spacing=2)
             placed.append(box_t)
+
+    # Người có trong nhãn mà pha 1 không tìm ra. Không vẽ thì hình che mất
+    # đúng cái nút thắt của kiến trúc 2 pha — mọi vi phạm của họ đều thành FN.
+    for box in missed_boxes:
+        b = [v * scale for v in box]
+        dashed_rect(d, b, MISS, lw)
+        txt = "pha 1 bỏ sót"
+        x0, y0, x1, y1 = d.textbbox((0, 0), txt, font=font)
+        tw, th = x1 - x0, y1 - y0
+        bx = max(0, min(b[0], im.width - tw - 2 * pad))
+        by = b[1] - th - 2 * pad
+        if by < 0:
+            by = b[1]
+        box_t = [bx, by, bx + tw + 2 * pad, by + th + 2 * pad]
+        for _ in range(len(placed) + 1):
+            hit = next((pr for pr in placed
+                        if not (box_t[2] <= pr[0] or box_t[0] >= pr[2]
+                                or box_t[3] <= pr[1] or box_t[1] >= pr[3])), None)
+            if hit is None:
+                break
+            shift = hit[3] - box_t[1] + 2
+            box_t[1] += shift
+            box_t[3] += shift
+        d.rectangle(box_t, fill=MISS)
+        d.text((box_t[0] + pad, box_t[1] + pad - y0), txt, fill="white", font=font)
+        placed.append(box_t)
     return im
 
 
@@ -135,6 +173,10 @@ def main():
                     help="chỉ chọn ảnh có ít nhất N người")
     ap.add_argument("--scale", type=float, default=1.0)
     ap.add_argument("--out", default="figures/examples")
+    ap.add_argument("--boxes", default="phase1", choices=["phase1", "gt"],
+                    help="'phase1' = box do pha 1 tìm (end-to-end, có vẽ cả "
+                         "người bị bỏ sót); 'gt' = box người lấy từ nhãn gốc "
+                         "(protocol oracle, chỉ đánh giá pha 2)")
     args = ap.parse_args()
 
     from ultralytics import YOLO
@@ -176,15 +218,22 @@ def main():
         gt_labels = [tally_to_labels(t)
                      for t in assign_ppe_to_persons(gt_persons, gt_ppes)]
 
-        r = det.predict(str(ip), conf=args.conf1, verbose=False)[0]
-        pred_boxes = [tuple(b) for b in r.boxes.xyxy.cpu().numpy().tolist()]
-        if not pred_boxes:
-            continue
+        if args.boxes == "gt":
+            # Protocol oracle: box người lấy thẳng từ nhãn, pha 1 không tham gia.
+            # Hình khi đó cho thấy đúng năng lực nhận PPE của pha 2, không bị
+            # số người pha 1 bỏ sót làm nhiễu.
+            pred_boxes = list(gt_persons)
+            m = {i: i for i in range(len(gt_persons))}
+            missed = set()
+        else:
+            r = det.predict(str(ip), conf=args.conf1, verbose=False)[0]
+            pred_boxes = [tuple(b) for b in r.boxes.xyxy.cpu().numpy().tolist()]
+            if not pred_boxes:
+                continue
+            m, missed = match_persons(pred_boxes, gt_persons)
+            if not m:
+                continue
         preds = classify(clf, tf, im, pred_boxes, device)
-
-        m, _ = match_persons(pred_boxes, gt_persons)
-        if not m:
-            continue
 
         # điểm ưu tiên: nhiều nhãn đúng + có vi phạm ở nhóm vật nhỏ
         n_ok = n_all = n_small = 0
@@ -204,14 +253,16 @@ def main():
         boxes = [pred_boxes[i] for i in m]
         pp = [preds[i] for i in m]
         gg = [gt_labels[j] for j in m.values()]
-        cands.append((score, ip, im, boxes, pp, gg))
+        miss_boxes = [gt_persons[j] for j in sorted(missed)]
+        cands.append((score, ip, im, boxes, pp, gg, miss_boxes))
 
     cands.sort(key=lambda t: -t[0])
-    for rank, (score, ip, im, boxes, pp, gg) in enumerate(cands[:args.n], 1):
-        vis = draw_one(im, boxes, pp, gg, args.scale)
+    for rank, (score, ip, im, boxes, pp, gg, mb) in enumerate(cands[:args.n], 1):
+        vis = draw_one(im, boxes, pp, gg, args.scale, mb)
         name = f"vd{rank:02d}_{ip.stem}.jpg"
         vis.save(out / name, quality=94)
-        print(f"  {name}   ({len(boxes)} người, điểm {score:.2f})")
+        note = f", {len(mb)} người pha 1 bỏ sót" if mb else ""
+        print(f"  {name}   ({len(boxes)} người{note}, điểm {score:.2f})")
 
     print(f"\nĐã xuất {min(len(cands), args.n)} ảnh vào {out}/")
     print("\nChú thích để dùng dưới hình trong bài:")

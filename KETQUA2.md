@@ -215,7 +215,32 @@ theo README dataset). Hệ quả:
 | **`fig_conf_e2e`** | **Ngưỡng tối ưu pha 1 riêng lẻ ≠ ngưỡng tối ưu toàn hệ** (mới) |
 | `fig_thresholds` | F1 trước/sau khi tối ưu ngưỡng riêng |
 | `fig_label_stats` | Phân bố nhãn tuân thủ / vi phạm / không xác định |
-| `figures/examples/` | 12 ảnh minh hoạ, ưu tiên ảnh nhiều người + vi phạm vật nhỏ |
+| `figures/examples/` | 12 ảnh **end-to-end**: khung xanh/đỏ = người pha 1 tìm được, khung vàng đứt nét = người pha 1 **bỏ sót** |
+| `figures/examples_oracle/` | 12 ảnh **oracle**: box người lấy từ nhãn gốc, pha 1 không tham gia — cho thấy năng lực thật của pha 2 |
+
+### Chất lượng phát hiện người của pha 1 — đo trên chính 12 ảnh minh hoạ
+
+| pha 1 | bắt được | bỏ sót | recall |
+|---|---|---|---|
+| fine-tune @0,55 (cấu hình chính) | 50/74 | **24** | 0,676 |
+| fine-tune @0,30 | 57/74 | 17 | 0,770 |
+| yolo26m zero-shot @0,30 | 59/74 | 15 | 0,797 |
+
+> **Pha 1 là nút thắt, và hình phải nói ra điều đó.** Cấu hình chính bỏ sót
+> khoảng một phần ba số người (`vd07` sót 5/9, `vd12` sót 5/11). Bản đầu tiên của
+> `export_examples.py` chỉ vẽ người pha 1 tìm được, nên người bị bỏ sót biến mất
+> khỏi hình và hình trông tốt hơn thực tế — mâu thuẫn với chính bảng số liệu.
+> Nay mọi người bị bỏ sót đều được vẽ bằng khung vàng đứt nét.
+>
+> Với an toàn lao động, mỗi người bị bỏ sót là một vi phạm không bao giờ được
+> báo, nên FN đắt hơn FP. Đây là chỗ chỉ tiêu macro-F1 (tối ưu tại conf 0,55)
+> lệch khỏi mục tiêu ứng dụng (muốn conf thấp hơn). Bài nên nêu rõ sự lệch này
+> thay vì chỉ báo cáo điểm tối ưu F1.
+>
+> Bộ ảnh `examples_oracle/` dùng box người từ nhãn gốc nên không sót ai; nó
+> minh hoạ đúng phần mà phương pháp này đóng góp — nhận PPE trên từng người —
+> và tương ứng với bảng oracle ở mục 3. Khi đưa vào bài phải ghi rõ là protocol
+> oracle, không được trình bày như kết quả end-to-end.
 
 ---
 
