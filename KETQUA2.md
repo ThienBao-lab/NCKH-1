@@ -187,11 +187,18 @@ theo README dataset). Hệ quả:
    **Đã chạy bằng `--batch 96 --lr 1e-4`**, cố định chung cho cả 3 seed.
    Comment giải thích điều này trong `train_phase2.py` đã bị xóa ở commit mới —
    nên khôi phục mặc định cũ.
-3. **`export_examples.py` vẽ chữ không đọc được — đã sửa.** Script dùng font
-   bitmap mặc định của PIL, không có glyph cho tiếng Việt (`mũ`, `áo`, `găng`,
-   `giày`) lẫn `✓`/`✗`, nên nhãn ra thành ký tự rác; font đó cũng không phóng to
-   theo `--scale`. Đã chuyển sang DejaVuSans-Bold, cỡ chữ theo cạnh ảnh, kèm cơ
-   chế đẩy nhãn tránh chồng khi nhiều người đứng sát nhau.
+3. **`export_examples.py` — hai lỗi ở ảnh minh hoạ, đã sửa.**
+   - *Chữ không đọc được:* script dùng font bitmap mặc định của PIL, không có
+     glyph cho tiếng Việt (`mũ`, `áo`, `găng`, `giày`) lẫn `✓`/`✗`, nên nhãn ra
+     ký tự rác; font đó cũng không phóng to theo `--scale`. Đã chuyển sang
+     DejaVuSans-Bold, cỡ chữ theo cạnh ảnh.
+   - *Ký hiệu gây hiểu ngược:* nhãn cũ ghi `✓mũ`, trong đó `✓` chỉ có nghĩa
+     "model đoán đúng". Người xem hình sẽ đọc thành "người này có đội mũ",
+     trong khi ý thật là "người này **thiếu** mũ và model bắt đúng" — nguy hiểm
+     cho một hình đưa vào bài. Nhãn mới nói rõ nội dung:
+     `✓thiếu mũ` (vi phạm, bắt đúng) · `✗sót mũ` (vi phạm nhưng model không báo,
+     FN) · `✗nhầm mũ` (có mang nhưng model báo vi phạm, FP). Mỗi nhóm xuống một
+     dòng và có cơ chế đẩy tránh chồng khi nhiều người đứng sát nhau.
 4. **`export_examples.py` không nhận `--thresholds`**, nên ảnh minh hoạ dùng
    ngưỡng 0,5 chung, lệch nhẹ so với cấu hình chính thức. Ảnh hưởng không đáng
    kể vì ngưỡng riêng chỉ đổi +0,0015.

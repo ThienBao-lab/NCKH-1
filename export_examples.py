@@ -3,7 +3,7 @@ Xuất ảnh minh hoạ định tính cho bài báo.
 
 Với mỗi ảnh test được chọn, vẽ:
   - khung người pha 1 phát hiện được
-  - nhãn vi phạm pha 2 dự đoán cho từng người
+  - nhãn vi phạm pha 2 dự đoán cho từng người, ghi rõ thiếu / sót / nhầm
   - đối chiếu với nhãn thật (đúng màu xanh, sai màu đỏ)
 
 Ưu tiên chọn những ảnh "kể được câu chuyện": ảnh mà hệ 2 pha đúng còn
@@ -75,34 +75,48 @@ def draw_one(im, persons, preds, gts, scale=1.0):
             colour = BAD
         d.rectangle(b, outline=colour, width=lw)
 
-        # nhãn: chỉ ghi nhóm có vi phạm hoặc dự đoán sai
+        # Nhãn: chỉ ghi nhóm có vi phạm hoặc dự đoán sai.
+        # Phải nói rõ NỘI DUNG chứ không chỉ đúng/sai: "✓mũ" dễ bị đọc thành
+        # "có đội mũ", trong khi ý là "thiếu mũ và model bắt đúng".
         lines = []
         for i, gname in enumerate(GROUP_NAMES):
             p, g = pred[i], gt[i]
             if g < 0:
                 continue
-            if g == 1 or p != g:
-                mark = "✓" if p == g else "✗"
-                lines.append(f"{mark}{SHORT[gname]}")
+            if g == 1 and p == 1:                 # vi phạm, bắt đúng
+                lines.append(f"✓thiếu {SHORT[gname]}")
+            elif g == 1 and p == 0:               # vi phạm, bỏ sót
+                lines.append(f"✗sót {SHORT[gname]}")
+            elif g == 0 and p == 1:               # tuân thủ, báo nhầm
+                lines.append(f"✗nhầm {SHORT[gname]}")
         if lines:
-            txt = " ".join(lines)
-            x0, y0, x1, y1 = d.textbbox((0, 0), txt, font=font)
+            # mỗi nhóm một dòng: nhãn hẹp hơn nhiều so với ghép một dòng dài,
+            # nên dễ xếp mà không đè lên người bên cạnh
+            txt = "\n".join(lines)
+            x0, y0, x1, y1 = d.multiline_textbbox((0, 0), txt, font=font,
+                                                  spacing=2)
             tw, th = x1 - x0, y1 - y0
-            bx = min(b[0], im.width - tw - 2 * pad)          # không tràn phải
+            bx = max(0, min(b[0], im.width - tw - 2 * pad))   # không tràn hai bên
             by = b[1] - th - 2 * pad
-            if by < 0:                                       # hết chỗ phía trên
+            if by < 0:                                        # hết chỗ phía trên
                 by = b[1]
-            # đẩy tránh nhãn đã vẽ của người khác
             box_t = [bx, by, bx + tw + 2 * pad, by + th + 2 * pad]
-            for pr in placed:
-                if not (box_t[2] < pr[0] or box_t[0] > pr[2]
-                        or box_t[3] < pr[1] or box_t[1] > pr[3]):
-                    shift = pr[3] - box_t[1] + 2
-                    box_t[1] += shift
-                    box_t[3] += shift
+
+            # đẩy xuống cho tới khi không đè nhãn nào đã vẽ
+            for _ in range(len(placed) + 1):
+                hit = next((pr for pr in placed
+                            if not (box_t[2] <= pr[0] or box_t[0] >= pr[2]
+                                    or box_t[3] <= pr[1] or box_t[1] >= pr[3])),
+                           None)
+                if hit is None:
+                    break
+                shift = hit[3] - box_t[1] + 2
+                box_t[1] += shift
+                box_t[3] += shift
+
             d.rectangle(box_t, fill=colour)
-            d.text((box_t[0] + pad, box_t[1] + pad - y0), txt,
-                   fill="white", font=font)
+            d.multiline_text((box_t[0] + pad, box_t[1] + pad - y0), txt,
+                             fill="white", font=font, spacing=2)
             placed.append(box_t)
     return im
 
@@ -200,9 +214,13 @@ def main():
         print(f"  {name}   ({len(boxes)} người, điểm {score:.2f})")
 
     print(f"\nĐã xuất {min(len(cands), args.n)} ảnh vào {out}/")
-    print("Chú thích: khung xanh = mọi nhãn đúng, đỏ = có nhãn sai,"
-          " xám = không có nhãn xác định.")
-    print("Chữ trên khung: ✓/✗ + tên nhóm, chỉ hiện nhóm có vi phạm hoặc dự đoán sai.")
+    print("\nChú thích để dùng dưới hình trong bài:")
+    print("  Khung xanh = mọi nhãn xác định đều đúng · đỏ = có nhãn sai ·"
+          " xám = không nhãn nào xác định được.")
+    print("  ✓thiếu X = người này KHÔNG mang X, model bắt đúng.")
+    print("  ✗sót X   = người này không mang X nhưng model không báo (FN).")
+    print("  ✗nhầm X  = người này CÓ mang X nhưng model báo vi phạm (FP).")
+    print("  Nhóm không xác định được từ nhãn gốc thì không hiện.")
 
 
 if __name__ == "__main__":
