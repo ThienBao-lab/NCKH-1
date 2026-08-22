@@ -1,0 +1,17 @@
+229 ảnh trong split 'val'
+
+  conf         P         R   macroF1   per-group F1
+  0.20    0.6782    0.8369    0.7446   helmet=0.813 vest=0.794 gloves=0.654 boots=0.717
+  0.25    0.6795    0.8369    0.7453   helmet=0.813 vest=0.797 gloves=0.654 boots=0.717
+  0.30    0.6901    0.8317    0.7498   helmet=0.808 vest=0.796 gloves=0.662 boots=0.733
+  0.35    0.7306    0.8317    0.7736   helmet=0.826 vest=0.807 gloves=0.685 boots=0.776
+  0.40    0.7502    0.8227    0.7800   helmet=0.826 vest=0.819 gloves=0.680 boots=0.795
+  0.45    0.7698    0.8227    0.7919   helmet=0.831 vest=0.822 gloves=0.709 boots=0.805
+  0.50    0.7793    0.8192    0.7953   helmet=0.833 vest=0.824 gloves=0.719 boots=0.805
+  0.55    0.7869    0.8173    0.7981   helmet=0.836 vest=0.823 gloves=0.719 boots=0.815
+  0.60    0.7851    0.8001    0.7894   helmet=0.828 vest=0.809 gloves=0.706 boots=0.815
+  0.65    0.7974    0.7922    0.7920   helmet=0.833 vest=0.803 gloves=0.707 boots=0.825
+  0.70    0.8189    0.7701    0.7913   helmet=0.824 vest=0.802 gloves=0.714 boots=0.825
+
+[phase1-finetune] conf tốt nhất trên val: 0.55  (macro-F1 0.7981)
+Đã lưu: runs_ppe2/phase1_person/conf_sweep_e2e_val.csv

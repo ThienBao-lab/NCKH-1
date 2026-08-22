@@ -1,0 +1,19 @@
+{
+  "ppe_total": 19783,
+  "ppe_assigned": 18552,
+  "label_helmet_ok": 3634,
+  "label_vest_violation": 2205,
+  "label_gloves_violation": 1142,
+  "label_boots_ok": 1834,
+  "crops": 6734,
+  "label_vest_ok": 3555,
+  "label_gloves_unknown": 4452,
+  "label_boots_unknown": 4475,
+  "label_helmet_violation": 2105,
+  "label_gloves_ok": 1140,
+  "label_vest_unknown": 974,
+  "label_boots_violation": 425,
+  "label_helmet_unknown": 995,
+  "image_no_person": 301,
+  "crop_too_small": 371
+}

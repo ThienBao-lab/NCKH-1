@@ -1,0 +1,52 @@
+{
+  "thresholds": {
+    "helmet": 0.6,
+    "vest": 0.3,
+    "gloves": 0.5,
+    "boots": 0.5
+  },
+  "macro_f1_test_default": 0.7787,
+  "macro_f1_test_tuned": 0.78,
+  "per_group_test": [
+    {
+      "group": "helmet",
+      "threshold": 0.6,
+      "P_default": 0.9512,
+      "R_default": 0.8703,
+      "F1_default": 0.909,
+      "P_tuned": 0.9525,
+      "R_tuned": 0.866,
+      "F1_tuned": 0.9072
+    },
+    {
+      "group": "vest",
+      "threshold": 0.3,
+      "P_default": 0.9526,
+      "R_default": 0.8876,
+      "F1_default": 0.9189,
+      "P_tuned": 0.9494,
+      "R_tuned": 0.9036,
+      "F1_tuned": 0.9259
+    },
+    {
+      "group": "gloves",
+      "threshold": 0.5,
+      "P_default": 0.7429,
+      "R_default": 0.7065,
+      "F1_default": 0.7242,
+      "P_tuned": 0.7429,
+      "R_tuned": 0.7065,
+      "F1_tuned": 0.7242
+    },
+    {
+      "group": "boots",
+      "threshold": 0.5,
+      "P_default": 0.5888,
+      "R_default": 0.5385,
+      "F1_default": 0.5625,
+      "P_tuned": 0.5888,
+      "R_tuned": 0.5385,
+      "F1_tuned": 0.5625
+    }
+  ]
+}

@@ -1,9 +1,42 @@
+# Ảnh gốc và crop — quá nặng, tải lại bằng prepare_data.py
 dataset/
-data2phase/
+data2phase/*
+!data2phase/phase2/
+data2phase/phase2/*
+!data2phase/phase2/stats.json
+!data2phase/phase2/manifest.csv
+
+# runs_ppe2: chặn mặc định, mở riêng phần số liệu để viết báo
 runs_ppe2/*
 !runs_ppe2/logs/
-runs_ppe2/logs/*
-!runs_ppe2/logs/phase2_convnext.log
+!runs_ppe2/*.json
+!runs_ppe2/*.csv
+!runs_ppe2/conf030/
+!runs_ppe2/phase1_person/
+runs_ppe2/phase1_person/*
+!runs_ppe2/phase1_person/*.csv
+!runs_ppe2/phase2_s0/
+!runs_ppe2/phase2_s1/
+!runs_ppe2/phase2_s2/
+!runs_ppe2/phase2_convnext/
+runs_ppe2/phase2_s0/*
+runs_ppe2/phase2_s1/*
+runs_ppe2/phase2_s2/*
+runs_ppe2/phase2_convnext/*
+!runs_ppe2/phase2_s0/history.json
+!runs_ppe2/phase2_s1/history.json
+!runs_ppe2/phase2_s2/history.json
+!runs_ppe2/phase2_convnext/history.json
+!runs_ppe2/detect/
+runs_ppe2/detect/**/weights/
+
 __pycache__/
 *.pt
 .venv/
+
+# Ảnh debug của ultralytics — không dùng để viết báo
+runs_ppe2/detect/**/train_batch*.jpg
+runs_ppe2/detect/**/val_batch*.jpg
+runs_ppe2/detect/**/labels*.jpg
+runs_ppe2/detect/val-*/
+runs_ppe2/detect/val/

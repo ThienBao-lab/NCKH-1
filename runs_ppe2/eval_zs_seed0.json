@@ -1,0 +1,104 @@
+{
+  "two_phase": {
+    "title": "2 PHA — end-to-end (conf pha 1 = 0.7)",
+    "per_group": [
+      {
+        "group": "helmet",
+        "P": 0.8984,
+        "R": 0.6317,
+        "F1": 0.7418,
+        "TP": 451,
+        "FP": 51,
+        "FN": 263
+      },
+      {
+        "group": "vest",
+        "P": 0.913,
+        "R": 0.63,
+        "F1": 0.7456,
+        "TP": 504,
+        "FP": 48,
+        "FN": 296
+      },
+      {
+        "group": "gloves",
+        "P": 0.7215,
+        "R": 0.6162,
+        "F1": 0.6647,
+        "TP": 228,
+        "FP": 88,
+        "FN": 142
+      },
+      {
+        "group": "boots",
+        "P": 0.4909,
+        "R": 0.4615,
+        "F1": 0.4758,
+        "TP": 54,
+        "FP": 56,
+        "FN": 63
+      }
+    ],
+    "macro": {
+      "P": 0.756,
+      "R": 0.5849,
+      "F1": 0.657
+    }
+  },
+  "conf1": 0.7,
+  "phase1": "yolo26m.pt",
+  "phase2": "runs_ppe2/phase2_s0/best.pt",
+  "thresholds": [
+    0.6,
+    0.3,
+    0.5,
+    0.5
+  ],
+  "one_phase": {
+    "title": "1 PHA — quy về nhãn theo từng người",
+    "per_group": [
+      {
+        "group": "helmet",
+        "P": 0.8922,
+        "R": 0.6261,
+        "F1": 0.7358,
+        "TP": 447,
+        "FP": 54,
+        "FN": 267
+      },
+      {
+        "group": "vest",
+        "P": 0.9205,
+        "R": 0.6075,
+        "F1": 0.7319,
+        "TP": 486,
+        "FP": 42,
+        "FN": 314
+      },
+      {
+        "group": "gloves",
+        "P": 0.7959,
+        "R": 0.3162,
+        "F1": 0.4526,
+        "TP": 117,
+        "FP": 30,
+        "FN": 253
+      },
+      {
+        "group": "boots",
+        "P": 0.4821,
+        "R": 0.2308,
+        "F1": 0.3121,
+        "TP": 27,
+        "FP": 29,
+        "FN": 90
+      }
+    ],
+    "macro": {
+      "P": 0.7727,
+      "R": 0.4451,
+      "F1": 0.5581
+    }
+  },
+  "baseline": "runs_ppe2/baseline1_seed0/weights/best.pt"
+}

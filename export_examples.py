@@ -19,7 +19,7 @@ import argparse
 from pathlib import Path
 
 import torch
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 import common
 from common import (
@@ -34,6 +34,20 @@ IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 OK, BAD, NEU = (34, 197, 94), (239, 68, 68), (148, 163, 184)
 SHORT = {"helmet": "mũ", "vest": "áo", "gloves": "găng", "boots": "giày"}
 
+# Font bitmap mặc định của PIL không có glyph tiếng Việt lẫn ✓/✗ (chữ ra thành
+# ô vuông) và không phóng to theo --scale. DejaVu có đủ cả hai.
+FONT_CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+]
+
+
+def load_font(size):
+    for p in FONT_CANDIDATES:
+        if Path(p).exists():
+            return ImageFont.truetype(p, size)
+    return ImageFont.load_default()
+
 
 def draw_one(im, persons, preds, gts, scale=1.0):
     """Vẽ khung + nhãn lên bản sao của ảnh."""
@@ -41,6 +55,11 @@ def draw_one(im, persons, preds, gts, scale=1.0):
     if scale != 1.0:
         im = im.resize((int(im.width * scale), int(im.height * scale)))
     d = ImageDraw.Draw(im)
+    # cỡ chữ theo cạnh ảnh để ảnh lớn nhỏ đều đọc được
+    fs = max(13, int(min(im.width, im.height) * 0.022))
+    font = load_font(fs)
+    pad, lw = max(2, fs // 4), max(2, int(3 * scale))
+    placed = []                                   # vùng nhãn đã vẽ, để tránh chồng
 
     for k, box in enumerate(persons):
         b = [v * scale for v in box]
@@ -54,7 +73,7 @@ def draw_one(im, persons, preds, gts, scale=1.0):
             colour = OK
         else:
             colour = BAD
-        d.rectangle(b, outline=colour, width=3)
+        d.rectangle(b, outline=colour, width=lw)
 
         # nhãn: chỉ ghi nhóm có vi phạm hoặc dự đoán sai
         lines = []
@@ -67,9 +86,24 @@ def draw_one(im, persons, preds, gts, scale=1.0):
                 lines.append(f"{mark}{SHORT[gname]}")
         if lines:
             txt = " ".join(lines)
-            ty = max(0, b[1] - 16)
-            d.rectangle([b[0], ty, b[0] + 7 * len(txt) + 6, ty + 15], fill=colour)
-            d.text((b[0] + 3, ty + 2), txt, fill="white")
+            x0, y0, x1, y1 = d.textbbox((0, 0), txt, font=font)
+            tw, th = x1 - x0, y1 - y0
+            bx = min(b[0], im.width - tw - 2 * pad)          # không tràn phải
+            by = b[1] - th - 2 * pad
+            if by < 0:                                       # hết chỗ phía trên
+                by = b[1]
+            # đẩy tránh nhãn đã vẽ của người khác
+            box_t = [bx, by, bx + tw + 2 * pad, by + th + 2 * pad]
+            for pr in placed:
+                if not (box_t[2] < pr[0] or box_t[0] > pr[2]
+                        or box_t[3] < pr[1] or box_t[1] > pr[3]):
+                    shift = pr[3] - box_t[1] + 2
+                    box_t[1] += shift
+                    box_t[3] += shift
+            d.rectangle(box_t, fill=colour)
+            d.text((box_t[0] + pad, box_t[1] + pad - y0), txt,
+                   fill="white", font=font)
+            placed.append(box_t)
     return im
 
 

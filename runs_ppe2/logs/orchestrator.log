@@ -1,0 +1,3 @@
+[GPU0] phase1 done -> baseline seed1
+[GPU0] baseline seed1 done -> phase2 seed0
+[GPU1] baseline seed0 done -> baseline seed2

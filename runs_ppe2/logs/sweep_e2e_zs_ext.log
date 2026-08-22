@@ -1,0 +1,10 @@
+229 ảnh trong split 'val'
+
+  conf         P         R   macroF1   per-group F1
+  0.75    0.7920    0.7455    0.7621   helmet=0.765 vest=0.762 gloves=0.707 boots=0.815
+  0.80    0.8044    0.7199    0.7516   helmet=0.726 vest=0.743 gloves=0.723 boots=0.815
+  0.85    0.8182    0.6438    0.7112   helmet=0.653 vest=0.682 gloves=0.705 boots=0.805
+  0.90    0.8858    0.5193    0.6411   helmet=0.516 vest=0.574 gloves=0.709 boots=0.765
+
+[yolo26m-zeroshot-ext] conf tốt nhất trên val: 0.75  (macro-F1 0.7621)
+Đã lưu: runs_ppe2/conf_sweep_e2e_val_zs_ext.csv
