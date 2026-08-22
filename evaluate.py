@@ -86,9 +86,17 @@ def match_persons(pred_boxes, gt_boxes):
 # ---------------------------------------------------------------- pha 2
 @torch.no_grad()
 def classify(model, tf, image, boxes, device, thresh=0.5):
-    """Trả list nhãn dự đoán (0/1) cho từng box người."""
+    """
+    Trả list nhãn dự đoán (0/1) cho từng box người.
+    `thresh` là một số (dùng chung) hoặc list/tensor N_GROUPS phần tử
+    (ngưỡng riêng từng nhóm, lấy từ thresholds.json).
+    """
+    if isinstance(thresh, (int, float)):
+        th = torch.full((N_GROUPS,), float(thresh))
+    else:
+        th = torch.as_tensor(thresh, dtype=torch.float32)
+
     W, H = image.size
-    out = []
     batch, keep = [], []
     for k, b in enumerate(boxes):
         ex = expand_box(b, CROP_MARGIN, W, H)
@@ -100,14 +108,14 @@ def classify(model, tf, image, boxes, device, thresh=0.5):
     preds = [[0] * N_GROUPS for _ in boxes]      # crop quá nhỏ -> mặc định tuân thủ
     if batch:
         x = torch.stack(batch).to(device)
-        p = (torch.sigmoid(model(x)).cpu() > thresh).int().tolist()
+        p = (torch.sigmoid(model(x)).cpu() > th).int().tolist()
         for k, row in zip(keep, p):
             preds[k] = row
     return preds
 
 
 # ---------------------------------------------------------------- chạy
-def run_two_phase(imgs, lbl_dir, det1, clf, tf, device, conf):
+def run_two_phase(imgs, lbl_dir, det1, clf, tf, device, conf, thresh=0.5):
     t = Tally()
     for ip in imgs:
         im = Image.open(ip).convert("RGB")
@@ -120,7 +128,8 @@ def run_two_phase(imgs, lbl_dir, det1, clf, tf, device, conf):
 
         r = det1.predict(str(ip), conf=conf, verbose=False)[0]
         pred_boxes = [tuple(b) for b in r.boxes.xyxy.cpu().numpy().tolist()]
-        pred_labels = classify(clf, tf, im, pred_boxes, device) if pred_boxes else []
+        pred_labels = (classify(clf, tf, im, pred_boxes, device, thresh)
+                       if pred_boxes else [])
 
         m, missed = match_persons(pred_boxes, gt_persons)
         for i, j in m.items():
@@ -188,6 +197,7 @@ def main():
     ap.add_argument("--conf-baseline", type=float, default=0.25)
     ap.add_argument("--data-yaml", help="data.yaml gốc, để lấy đúng thứ tự lớp")
     ap.add_argument("--save-json", help="lưu kết quả ra JSON để vẽ hình")
+    ap.add_argument("--thresholds", help="thresholds.json từ tune_thresholds.py; không có thì dùng chung 0.5 cho mọi nhóm")
     args = ap.parse_args()
 
     if args.data_yaml:
@@ -219,11 +229,25 @@ def main():
     clf.to(device).eval()
     tf = build_transforms(False)
 
-    t2 = run_two_phase(imgs, lbl_dir, YOLO(args.phase1), clf, tf, device, args.conf1)
+    thresh = 0.5
+    if args.thresholds:
+        d = json.loads(Path(args.thresholds).read_text())["thresholds"]
+        missing = [g for g in GROUP_NAMES if g not in d]
+        if missing:
+            raise SystemExit(f"thresholds.json thiếu nhóm: {missing}")
+        thresh = [d[g] for g in GROUP_NAMES]
+        print("Ngưỡng riêng từng nhóm:",
+              {g: round(v, 2) for g, v in zip(GROUP_NAMES, thresh)})
+    else:
+        print("Dùng ngưỡng chung 0.5 (chưa truyền --thresholds)")
+
+    t2 = run_two_phase(imgs, lbl_dir, YOLO(args.phase1), clf, tf, device,
+                       args.conf1, thresh)
     r2 = t2.report(f"2 PHA — end-to-end (conf pha 1 = {args.conf1})")
 
     out = {"two_phase": r2, "conf1": args.conf1,
-           "phase1": args.phase1, "phase2": args.phase2}
+           "phase1": args.phase1, "phase2": args.phase2,
+           "thresholds": thresh if isinstance(thresh, list) else "0.5 chung"}
 
     if args.baseline:
         t1 = run_one_phase(imgs, lbl_dir, YOLO(args.baseline), args.conf_baseline)

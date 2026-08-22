@@ -27,6 +27,9 @@ def main():
                     help="'0' hoặc '1' cho 1 GPU; '0,1' để dùng DDP cả hai")
     ap.add_argument("--cache", default="ram", choices=["ram", "disk", "False"],
                     help="cache ảnh vào RAM — máy nhiều RAM nên bật")
+    ap.add_argument("--sweep-split", default="val", choices=["val", "test"],
+                    help="quét ngưỡng conf trên tập nào (mặc định val — "
+                         "quét trên test là rò rỉ tập đánh giá)")
     ap.add_argument("--name", default="phase1_person")
     ap.add_argument("--project", default="runs_ppe2")
     args = ap.parse_args()
@@ -52,15 +55,18 @@ def main():
         **kw,
     )
 
-    print("\n" + "=" * 58)
-    print("  QUÉT NGƯỠNG CONF (tập test)")
-    print("=" * 58)
+    print("\n" + "=" * 62)
+    print(f"  QUÉT NGƯỠNG CONF (tập {args.sweep_split})")
+    print("=" * 62)
+    if args.sweep_split == "test":
+        print("  ⚠ Đang quét trên TEST. Ngưỡng chọn từ đây rồi lại báo cáo")
+        print("    trên chính tập đó là rò rỉ tập đánh giá. Dùng --sweep-split val.")
     print(f"{'conf':>6}{'P':>10}{'R':>10}{'F1':>10}{'mAP50':>10}")
 
     rows, best_f1, best_conf = [], -1.0, None
     for i in range(10):                       # 0.10 -> 0.55, bước 0.05
         conf = round(0.10 + 0.05 * i, 2)
-        r = m.val(data=args.data, split="test", imgsz=args.imgsz,
+        r = m.val(data=args.data, split=args.sweep_split, imgsz=args.imgsz,
                   conf=conf, verbose=False)
         p, rec = float(r.box.mp), float(r.box.mr)
         f1 = 2 * p * rec / (p + rec) if p + rec else 0.0
@@ -72,7 +78,7 @@ def main():
         mark = "  <- F1 cao nhat" if conf == best_conf else ""
         print(f"{conf:>6.2f}{p:>10.4f}{rec:>10.4f}{f1:>10.4f}{m50:>10.4f}{mark}")
 
-    csv_path = Path(args.project) / args.name / "conf_sweep.csv"
+    csv_path = Path(args.project) / args.name / f"conf_sweep_{args.sweep_split}.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with csv_path.open("w", newline="") as f:
         w = csv.writer(f)

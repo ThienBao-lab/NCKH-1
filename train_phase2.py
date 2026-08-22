@@ -54,9 +54,7 @@ def build_transforms(train):
         base += [
             transforms.RandomHorizontalFlip(0.5),
             transforms.ColorJitter(0.3, 0.3, 0.3, 0.05),
-            # biên độ nới rộng để mô phỏng sai số box của pha 1: lúc train crop
-            # cắt từ box GT ôm sát, lúc infer cắt từ box detector đoán lệch.
-            transforms.RandomAffine(degrees=5, translate=(0.08, 0.08), scale=(0.85, 1.15)),
+            transforms.RandomAffine(degrees=5, translate=(0.04, 0.04), scale=(0.92, 1.08)),
         ]
     base += [
         transforms.ToTensor(),
@@ -80,14 +78,7 @@ def build_model(arch, pretrained=True):
         m = models.resnet50(weights=w)
         m.fc = nn.Linear(m.fc.in_features, N_GROUPS)
     else:
-        # Mọi kiến trúc khác lấy từ timm — gồm ViT thuần. ViT cần `img_size`
-        # để nội suy positional embedding về crop 384x192 (không vuông).
-        import timm
-        try:
-            m = timm.create_model(arch, pretrained=pretrained,
-                                  num_classes=N_GROUPS, img_size=(CROP_H, CROP_W))
-        except TypeError:                    # kiến trúc không nhận img_size
-            m = timm.create_model(arch, pretrained=pretrained, num_classes=N_GROUPS)
+        raise ValueError(f"arch không hỗ trợ: {arch}")
     return m
 
 
@@ -138,10 +129,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True, help="thư mục OUT/phase2")
     ap.add_argument("--arch", default="convnext_tiny",
-                    help="convnext_tiny/efficientnet_b0/resnet50 (torchvision), "
-                         "hoặc bất kỳ tên model timm, vd vit_tiny_patch16_224.augreg_in21k_ft_in1k")
-    ap.add_argument("--epochs", type=int, default=30)
-    ap.add_argument("--batch", type=int, default=96)   # 3.6k mẫu -> batch nhỏ để đủ số bước/epoch
+                    choices=["convnext_tiny", "efficientnet_b0", "resnet50"])
+    ap.add_argument("--epochs", type=int, default=40)
+    ap.add_argument("--batch", type=int, default=512)
     ap.add_argument("--lr", type=float, default=None,
                     help="mặc định tự scale tuyến tính từ 3e-4 @ batch 64")
     ap.add_argument("--workers", type=int, default=16)
